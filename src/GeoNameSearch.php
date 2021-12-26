@@ -373,13 +373,13 @@ class GeoNameSearch {
 				'message' => $error, 
 			);
 		}else{
-			$data = json_decode($payload);
-			if(empty($data->geonames) or (int) $data->totalResultsCount < 1){
+			$data = json_decode($payload, true);
+			if(empty($data["geonames"]) or (int) $data["totalResultsCount"] < 1){
 				$res = array(
 					'status' => 201, 
 					'statusText' => 'data_empty',
 					'url' => $link,
-					'data' => $payload,
+					'data' => $data,
 					'message' => 'empty res data.', 
 					'error' => (!empty($error) ? $error : null), 
 				);
@@ -390,12 +390,12 @@ class GeoNameSearch {
 						'ISO' => $this->get("short_name"), 
 						'prefix' => $this->get("prefix") ?? $this->get("code"), 
 						'country' => $this->get("name") ?? null
-					), json_decode($payload, true))
+					), $data)
 				));
 
 				if($this->includeAllStates){
-					$res->data->geonames[] = $this->allArray();
-					sort($res->data->geonames);
+					$res["data"]["geonames"][] = $this->allArray();
+					sort($res["data"]["geonames"]);
 				}
 			}
         }
@@ -420,6 +420,6 @@ class GeoNameSearch {
 		$fp = @fopen($this->getFullPath(), 'w');
 		@fwrite($fp, json_encode($data));
 		@fclose($fp);
-		return json_decode($data);
+		return $data;
 	}
 }
