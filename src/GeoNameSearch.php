@@ -7,6 +7,7 @@
  */
 namespace Peterujah\NanoBlock;
 use \Peterujah\NanoBlock\Country;
+use \Peterujah\NanoBlock\Cache;
 use \GuzzleHttp\Client;
 /**
  * Class GeoNameSearch.
@@ -92,6 +93,11 @@ class GeoNameSearch {
 	 */
 	private $east;
 
+	/**
+	 * Hold the status of caching method
+	 */
+	private $useCache;
+
     public function __construct($username){
         $this->setType(self::JSON);
         $this->setStyle(self::SHORT);
@@ -99,7 +105,18 @@ class GeoNameSearch {
 		$this->setFilepath(__DIR__ . "/temp/");
 		$this->setLang("en");
 		$this->allowAllStates(false);
+		$this->useCache(true);
         $this->username = $username;
+    }
+
+	/**
+     * Set to allow using Cache Class
+     * @param bool $use true or false
+     * @return GeoNameSearch|object $this
+     */
+	public function useCache(bool $use){
+        $this->useCache = $use;
+		return $this;
     }
 
 	/**
@@ -330,18 +347,26 @@ class GeoNameSearch {
 			$param["east"] = $this->east;
 		}
 
-        if(@file_exists($this->getFullPath())){
-            $res = json_decode(@file_get_contents($this->getFullPath()));
-            if($this->includeAllStates){
-                $res->data->geonames[] = $this->allArray();
-                sort($res->data->geonames);
-            }
-            return $res;
-        }
-        return $this->fetch(
-			$this->endpoint . http_build_query($param), 
-			$param
-		);
+		if($this->useCache && class_exists('\Peterujah\NanoBlock\Cache')){
+			$res = (new Cache($this->query, $this->getFilepath()))->widthExpired("ALL", function () use($param) {
+				return $this->fetch($this->endpoint . http_build_query($param), $param);
+			}, 60*1000, true);
+		}else{
+			if(@file_exists($this->getFullPath())){
+				$res = json_decode(@file_get_contents($this->getFullPath()));
+			}else{
+				$res = $this->fetch($this->endpoint . http_build_query($param), $param);
+				if($res["status"] == 200){
+					$res = $this->store($res);
+				}
+			}
+		}
+
+		if($res["status"] == 200 && $this->includeAllStates){
+			$res["data"]["geonames"][] = $this->allArray();
+			sort($res["data"]["geonames"]);
+		}
+		return $res;
     }
 
 	/**
@@ -393,19 +418,15 @@ class GeoNameSearch {
 					'error' => (!empty($error) ? $error : null), 
 				);
 			}else{
-				$res = $this->store(array(
+				$res = array(
 					'status' => 200, 
+					'statusText' => 'has_data',
 					'data' => array_merge(array(
 						'ISO' => $this->get("short_name"), 
 						'prefix' => $this->get("prefix") ?? $this->get("code"), 
 						'country' => $this->get("name") ?? null
 					), $data)
-				));
-
-				if($this->includeAllStates){
-					$res["data"]["geonames"][] = $this->allArray();
-					sort($res["data"]["geonames"]);
-				}
+				);
 			}
         }
         return $res;
