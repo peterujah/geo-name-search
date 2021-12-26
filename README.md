@@ -16,16 +16,16 @@ Initialize GeoNameSearch with `geoname api username`
 $geo = new \Peterujah\NanoBlock\GeoNameSearch("username");
 ```
 
-List all states in Nigeria
+List all states in any country `Nigeria`
 
 ```php 
 $geo->states("Nigeria");
 ```
 
-List all states in Nigeria
+List all cities in any sates `Enugu`
 
 ```php 
-$geo->states("Nigeria");
+$geo->cities("Enugu");
 ```
 
 
