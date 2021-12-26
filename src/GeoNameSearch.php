@@ -13,22 +13,22 @@ class GeoNameSearch {
 	/**
 	 * Hold the return type format 
 	 */
-  public const JSON = "json";
-  public const XML = "xml";
-  public const RDF = "rdf";
+    public const JSON = "json";
+	public const XML = "xml";
+	public const RDF = "rdf";
 	
 	/**
 	 * Hold the verbosity of return styles
 	 */
-  public const SHORT = "SHORT";
-  public const MEDIUM = "MEDIUM";
-  public const LONG = "LONG";
-  public const FULL = "FULL";
+    public const SHORT = "SHORT";
+	public const MEDIUM = "MEDIUM";
+	public const LONG = "LONG";
+ 	public const FULL = "FULL";
 
 	 /**
 	 * Hold api endpoint url
 	 */
-  protected $endpoint = "http://api.geonames.org/search?";
+    protected $endpoint = "http://api.geonames.org/search?";
 
 	/**
 	 * Hold api username
@@ -94,9 +94,9 @@ class GeoNameSearch {
         $this->setType(self::JSON);
         $this->setStyle(self::SHORT);
         $this->setCountries(null);
-        $this->setFilepath(__DIR__ . "/temp/");
-        $this->setLang("en");
-        $this->allowAllStates(false);
+		$this->setFilepath(__DIR__ . "/temp/");
+		$this->setLang("en");
+		$this->allowAllStates(false);
         $this->username = $username;
     }
 
@@ -105,9 +105,9 @@ class GeoNameSearch {
      * @param string $lang language code
      * @return GeoNameSearch|object $this
      */
-	  public function setLang(string $lang){
+	public function setLang(string $lang){
         $this->language = $lang;
-		    return $this;
+		return $this;
     }
 
 	/**
@@ -373,8 +373,8 @@ class GeoNameSearch {
 				'message' => $error, 
 			);
 		}else{
-			$payload = json_decode($payload);
-			if(empty($payload->geonames) or (int) $payload->totalResultsCount < 1){
+			$data = json_decode($payload);
+			if(empty($data->geonames) or (int) $data->totalResultsCount < 1){
 				$res = array(
 					'status' => 201, 
 					'statusText' => 'data_empty',
@@ -390,11 +390,12 @@ class GeoNameSearch {
 						'ISO' => $this->get("short_name"), 
 						'prefix' => $this->get("prefix") ?? $this->get("code"), 
 						'country' => $this->get("name") ?? null
-					), $payload)
+					), json_decode($payload, true))
 				));
+
 				if($this->includeAllStates){
-					$res['data']['geonames'][] = $this->allArray();
-					sort($res['data']['geonames']);
+					$res->data->geonames[] = $this->allArray();
+					sort($res->data->geonames);
 				}
 			}
         }
@@ -403,7 +404,7 @@ class GeoNameSearch {
 
 	/**
      * Store api response data for later use
-	 * @param string $data json
+	 * @param array $data json
      * @return json api response
      */
 	private function store($data){
@@ -419,6 +420,6 @@ class GeoNameSearch {
 		$fp = @fopen($this->getFullPath(), 'w');
 		@fwrite($fp, json_encode($data));
 		@fclose($fp);
-		return $data;
+		return json_decode($data);
 	}
 }
