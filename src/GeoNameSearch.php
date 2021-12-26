@@ -197,7 +197,7 @@ class GeoNameSearch {
      */
 	public function setCountries($objOrArr){
         if(empty($objOrArr) && class_exists('CountryClass')){
-            $this->countryList = new \AfriMarketSquare\CountryClass(null, "service");
+            $this->countryList = new \Peterujah\NanoBlock\CountryClass(null, "service");
         }else{
             $this->countryList = $objOrArr;
         }
