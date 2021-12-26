@@ -6,6 +6,8 @@
  * @license     MIT public license
  */
 namespace Peterujah\NanoBlock;
+use \Peterujah\NanoBlock\Country;
+use \GuzzleHttp\Client;
 /**
  * Class GeoNameSearch.
  */
@@ -191,13 +193,13 @@ class GeoNameSearch {
     }
 
 	/**
-     * Set countries array or use our default \Peterujah\NanoBlock\CountryClass
+     * Set countries array or use our default \Peterujah\NanoBlock\Country
      * @param object|array $objOrArr class instance or array
      * @return GeoNameSearch|object $this
      */
 	public function setCountries($objOrArr){
-        if(empty($objOrArr) && class_exists('CountryClass')){
-            $this->countryList = new \Peterujah\NanoBlock\Country(null, "service");
+        if(empty($objOrArr) && class_exists('\Peterujah\NanoBlock\Country')){
+            $this->countryList = new Country(null, Country::SERVICE);
         }else{
             $this->countryList = $objOrArr;
         }
@@ -349,22 +351,29 @@ class GeoNameSearch {
      * @return object|array list api response
      */
     public function fetch($link, $param){
-        $curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, $link);
-		curl_setopt($curl, CURLOPT_FRESH_CONNECT, true);
-		curl_setopt($curl, CURLOPT_POST,1);
-		curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'GET');
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $param);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER,1);
-		curl_setopt($curl, CURLOPT_MAXREDIRS, 10);
-		curl_setopt($curl, CURLOPT_TIMEOUT, 120);
-		curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-		curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-		curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-		curl_setopt($curl, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.0.3705; .NET CLR 1.1.4322)');
-		$payload = curl_exec($curl);
-		$error = curl_error($curl);
-		curl_close ($curl);
+		if(class_exists('\GuzzleHttp\Client')){
+			$client = new Client();
+			$req = $client->request('GET', $link, $param);
+			$payload = $req->getBody();
+			$error = null;
+		}else{
+			$curl = curl_init();
+			curl_setopt($curl, CURLOPT_URL, $link);
+			curl_setopt($curl, CURLOPT_FRESH_CONNECT, true);
+			curl_setopt($curl, CURLOPT_POST,1);
+			curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'GET');
+			curl_setopt($curl, CURLOPT_POSTFIELDS, $param);
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER,1);
+			curl_setopt($curl, CURLOPT_MAXREDIRS, 10);
+			curl_setopt($curl, CURLOPT_TIMEOUT, 120);
+			curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+			curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+			curl_setopt($curl, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.0.3705; .NET CLR 1.1.4322)');
+			$payload = curl_exec($curl);
+			$error = curl_error($curl);
+			curl_close ($curl);
+		}
 
         if(!empty($error)){
 			$res = array(
