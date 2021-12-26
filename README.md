@@ -10,6 +10,8 @@ composer require peterujah/geo-name-search
 
 # USAGES
 
+First you have to create an account with geoname to acquire api username http://www.geonames.org/export/geonames-search.html
+
 Initialize GeoNameSearch with `geoname api username`
 
 ```php
