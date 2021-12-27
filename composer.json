@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "php": "^7.0 || ^8.0",
+        "php": ">=5.5",
         "peterujah/country-class": "^0.1",
         "peterujah/cache": "^0.1",
         "guzzlehttp/guzzle": "~6.5"
