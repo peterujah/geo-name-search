@@ -98,6 +98,16 @@ class GeoNameSearch {
 	 */
 	private $useCache;
 
+	/**
+	 * Hold the base country 
+	 */
+	private $baseCountry;
+
+	/**
+	 * Hold the directory cache base prefix 
+	 */
+	private $prefix;
+
     public function __construct($username){
         $this->setType(self::JSON);
         $this->setStyle(self::SHORT);
@@ -106,7 +116,9 @@ class GeoNameSearch {
 		$this->setLang("en");
 		$this->allowAllStates(false);
 		$this->useCache(true);
+		$this->stripWordState(true);
         $this->username = $username;
+		$this->baseCountry = "Nigeria";
     }
 
 	/**
@@ -216,7 +228,7 @@ class GeoNameSearch {
      */
 	public function setCountries($objOrArr){
         if(empty($objOrArr) && class_exists('\Peterujah\NanoBlock\Country')){
-            $this->countryList = new Country(null, Country::SERVICE);
+            $this->countryList = new Country(null, Country::BASIC);
         }else{
             $this->countryList = $objOrArr;
         }
@@ -232,13 +244,24 @@ class GeoNameSearch {
         $this->includeAllStates = $add;
 		return $this;
     }
+
+	/**
+     * Set remove state in state name before searching
+     * @param bool $add true or false
+     * @return GeoNameSearch|object $this
+     */
+    public function stripWordState(bool $strip){
+        $this->stripState = $strip;
+		return $this;
+    }
+    
     
 	/**
      * Gets the full file path and file name
      * @return string directory filepath / filename
      */
     public function getFullPath(){
-        return $this->filepath . (!empty($this->country) ? strtoupper($this->country) . "/" : "all/") . md5($this->query) . ".json";
+        return $this->filepath . (!empty($this->get("name")) ? strtoupper($this->get("name")) . "/{$this->prefix}/" : "ALL/{$this->prefix}/") . md5($this->query) . ".json";
     }
 
 	/**
@@ -246,7 +269,7 @@ class GeoNameSearch {
      * @return string directory filepath
      */
     public function getFilepath(){
-        return $this->filepath . (!empty($this->country) ? strtoupper($this->country) . "/" : "all/");
+        return $this->filepath . (!empty($this->get("name")) ? strtoupper($this->get("name")) . "/{$this->prefix}/" : "ALL/{$this->prefix}/");
     }
 
 	/**
@@ -283,7 +306,7 @@ class GeoNameSearch {
 		if(is_array($this->countryList)){
 			$list = $this->countryList;
 		}else{
-			$list = $this->countryList->getPath($this->country, "list");
+			$list = $this->countryList->getPath($this->baseCountry, "list");
 		}
 		return $list[$key] ?? null;
 	}
@@ -294,16 +317,20 @@ class GeoNameSearch {
      * @return object|array list states
      */
 	public function states($country){
-		return $this->query($country, "");
+		$this->baseCountry = $country;
+		return $this->search($country, "", "states");
 	}
 
 	/**
      * Query and return all cities in a given state
 	 * @param string $state state name
+	 * @param string $country states in country
      * @return object|array list cities
      */
-	public function cities($state){
-		return $this->query($state, "");
+	public function cities($state, $country){
+		$state = trim($this->stripState ? str_replace("state", "", strtolower($state)) : $state);
+		$this->baseCountry = $country;
+		return $this->search($state, "", "cities");
 	}
 
 	/**
@@ -312,16 +339,32 @@ class GeoNameSearch {
 	 * @param string $country country
      * @return object|array list states
      */
-    public function query($query, $country = ""){
+	public function query($query, $country){
+		$this->baseCountry = $country;
+		return $this->search($country, "", "query");
+	}
+
+	/**
+     * Search query and return cities, states in a given country or cities in a query state
+	 * @param string $query query city, states, place country
+	 * @param string $country country
+	 * @param string $prefix
+     * @return object|array list states
+     */
+    public function search($query, $country, $prefix){
         $this->country = urlencode(htmlentities($country));
         $this->query = urlencode(htmlentities($query));
+		$this->prefix = $prefix;
         $param  = array(
-            'q' => $this->query,
             'type' => $this->type, 
             'style' => $this->style,
             'username' => $this->username,
 			"lang" => $this->language
         );
+
+		if(!empty($this->query)){
+			$param["q"] = $this->query;
+		}
 
 		if(!empty($this->country)){
 			$param["country"] = $this->country;
