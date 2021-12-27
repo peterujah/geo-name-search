@@ -9,14 +9,12 @@
             "email": "ujahchigozie@gmail.com"
         }
     ],
+    
     "require": {
         "php": ">=5.5",
         "peterujah/country-class": "^0.1",
         "peterujah/cache": "^0.1",
         "guzzlehttp/guzzle": "~6.5"
-    },
-    "require-dev": {
-        "peterujah/geo-name-search": "^0.1"
     },
     "scripts": {
         "post-install-cmd": [
