@@ -10,7 +10,10 @@
         }
     ],
     "require": {
-        "php": "^7.0 || ^8.0"
+        "php": "^7.0 || ^8.0",
+        "laravel/framework": "5.1.*",
+        "peterujah/cache": "^0.1",
+        "guzzlehttp/guzzle": "~4.0"
     },
     "require-dev": {
         "peterujah/geo-name-search": "^0.1"
