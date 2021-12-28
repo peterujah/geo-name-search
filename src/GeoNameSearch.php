@@ -108,6 +108,11 @@ class GeoNameSearch {
 	 */
 	private $prefix;
 
+	/**
+	 * Hold ignore country in state and cities
+	 */
+	private $ignoreCountry;
+
     public function __construct($username){
         $this->setType(self::JSON);
         $this->setStyle(self::SHORT);
@@ -117,6 +122,7 @@ class GeoNameSearch {
 		$this->allowAllStates(false);
 		$this->useCache(true);
 		$this->stripWordState(true);
+		$this->removeCountry(false);
         $this->username = $username;
 		$this->baseCountry = "Nigeria";
     }
@@ -255,7 +261,16 @@ class GeoNameSearch {
 		return $this;
     }
     
-    
+    /**
+     * Set to remove country name from state and city
+     * @param bool $ignore true or false
+     * @return GeoNameSearch|object $this
+     */
+    public function removeCountry(bool $ignore){
+        $this->ignoreCountry = $ignore;
+		return $this;
+    }
+
 	/**
      * Gets the full file path and file name
      * @return string directory filepath / filename
@@ -318,6 +333,7 @@ class GeoNameSearch {
      */
 	public function states($country){
 		$this->baseCountry = $country;
+		$this->removeCountry(true);
 		return $this->search($country, "", "states");
 	}
 
@@ -330,6 +346,7 @@ class GeoNameSearch {
 	public function cities($state, $country){
 		$state = trim($this->stripState ? str_replace("state", "", strtolower($state)) : $state);
 		$this->baseCountry = $country;
+		$this->removeCountry(true);
 		return $this->search($state, "", "cities");
 	}
 
@@ -408,6 +425,15 @@ class GeoNameSearch {
 		if($res["status"] == 200 && $this->includeAllStates){
 			$res["data"]["geonames"][] = $this->allArray();
 			sort($res["data"]["geonames"]);
+		}
+
+		if($this->ignoreCountry){
+			foreach($res["data"]["geonames"] as $key => $geo){
+				if($geo["name"] == $this->country OR $geo["name"] == $this->baseCountry){
+					unset($res["data"]["geonames"][$key]);
+					break;
+				}
+			}
 		}
 		return $res;
     }
