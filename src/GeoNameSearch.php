@@ -113,6 +113,16 @@ class GeoNameSearch {
 	 */
 	private $ignoreCountry;
 
+	/**
+	 * Hold strip state status
+	 */
+	private $stripState;
+
+	/**
+	 * Hold strip city status
+	 */
+	private $stripCity;
+
     public function __construct($username){
         $this->setType(self::JSON);
         $this->setStyle(self::SHORT);
@@ -122,6 +132,7 @@ class GeoNameSearch {
 		$this->allowAllStates(false);
 		$this->useCache(true);
 		$this->stripWordState(true);
+		$this->stripWordCity(true);
 		$this->removeCountry(false);
         $this->username = $username;
 		$this->baseCountry = "Nigeria";
@@ -253,14 +264,24 @@ class GeoNameSearch {
 
 	/**
      * Set remove state in state name before searching
-     * @param bool $add true or false
+     * @param bool $strip true or false
      * @return GeoNameSearch|object $this
      */
     public function stripWordState(bool $strip){
         $this->stripState = $strip;
 		return $this;
     }
-    
+
+	/**
+     * Set remove city in city name before searching
+     * @param bool $strip true or false
+     * @return GeoNameSearch|object $this
+     */
+	public function stripWordCity(bool $strip){
+        $this->stripCity = $strip;
+		return $this;
+    }
+
     /**
      * Set to remove country name from state and city
      * @param bool $ignore true or false
@@ -327,6 +348,22 @@ class GeoNameSearch {
 	}
 
 	/**
+     * Strip city & state from query before searching
+     * @param string $query query
+     * @return string search query stripped
+     */
+    private function stripQuery(string $query){
+		$lowerQuery = strtolower($query);
+		if ($this->stripState && preg_match("~\bstate\b~", $lowerQuery) ){
+			$lowerQuery = str_replace("state", "", $lowerQuery);
+		}
+		if ($this->stripCity && preg_match("~\bcity\b~", $lowerQuery) ){
+			$lowerQuery = str_replace("city", "", $lowerQuery);
+		}
+		return trim($lowerQuery);
+	}
+
+	/**
      * Query and return all states in a given country
 	 * @param string $country country name or country code
      * @return object|array list states
@@ -344,9 +381,9 @@ class GeoNameSearch {
      * @return object|array list cities
      */
 	public function cities($state, $country){
-		$state = trim($this->stripState ? str_replace("state", "", strtolower($state)) : $state);
 		$this->baseCountry = $country;
 		$this->removeCountry(true);
+		$this->allowAllStates(false);
 		return $this->search($state, "", "cities");
 	}
 
@@ -369,6 +406,7 @@ class GeoNameSearch {
      * @return object|array list states
      */
     public function search($query, $country, $prefix){
+		$query = $this->stripQuery($query);
         $this->country = urlencode(htmlentities($country));
         $this->query = urlencode(htmlentities($query));
 		$this->prefix = $prefix;
