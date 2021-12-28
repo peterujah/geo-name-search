@@ -429,7 +429,8 @@ class GeoNameSearch {
 
 		if($this->ignoreCountry){
 			foreach($res["data"]["geonames"] as $key => $geo){
-				if($geo["name"] == $this->country OR $geo["name"] == $this->baseCountry){
+				$countryName = strtolower($geo["name"]);
+				if($countryName == strtolower($this->country) OR $countryName == strtolower($this->baseCountry)){
 					unset($res["data"]["geonames"][$key]);
 					break;
 				}
