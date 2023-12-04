@@ -6,9 +6,7 @@
  * @license     MIT public license
  */
 namespace Peterujah\NanoBlock;
-use \Peterujah\NanoBlock\Country;
-use \Peterujah\NanoBlock\Cache;
-use \GuzzleHttp\Client;
+use \Exception;
 /**
  * Class GeoNameSearch.
  */
@@ -41,22 +39,22 @@ class GeoNameSearch {
 	/**
 	 * Hold the selected verbosity return style
 	 */
-    private $style;
+    private string $style = 'SHORT';
 
 	/**
 	 * Hold the selected return type
 	 */
-    private $type;
+    private string $type = 'json';
 
 	/**
 	 * Hold the local path to save api data
 	 */
-    private $filepath;
+    private string $filepath = '';
 
 	/**
 	 * Hold bool status to prepend all states array
 	 */
-    private $includeAllStates;
+    private bool $includeAllStates = false;
 
 	/**
 	 * Hold the country object or array
@@ -66,7 +64,7 @@ class GeoNameSearch {
 	/**
 	 * Hold the return language type
 	 */
-	private $language;
+	private string $language = 'en';
 
 	/**
 	 * Hold the maximum row to select
@@ -96,7 +94,7 @@ class GeoNameSearch {
 	/**
 	 * Hold the status of caching method
 	 */
-	private $useCache;
+	private bool $useCache = true;
 
 	/**
 	 * Hold the base country 
@@ -108,42 +106,22 @@ class GeoNameSearch {
 	 */
 	private $prefix;
 
-	/**
-	 * Hold ignore country in state and cities
-	 */
-	private $ignoreCountry;
+	private bool $stripState = true;
 
-	/**
-	 * Hold strip state status
-	 */
-	private $stripState;
-
-	/**
-	 * Hold strip city status
-	 */
-	private $stripCity;
-
-    public function __construct($username){
-        $this->setType(self::JSON);
-        $this->setStyle(self::SHORT);
-        $this->setCountries(null);
+    public function __construct(string $username, string $baseCountry = 'Nigeria'){
+        //$this->setCountries(new Country(null, Country::BASIC));
 		$this->setFilepath(__DIR__ . "/temp/");
-		$this->setLang("en");
-		$this->allowAllStates(false);
-		$this->useCache(true);
-		$this->stripWordState(true);
-		$this->stripWordCity(true);
-		$this->removeCountry(false);
         $this->username = $username;
-		$this->baseCountry = "Nigeria";
+		$this->baseCountry = $baseCountry;
     }
 
 	/**
      * Set to allow using Cache Class
      * @param bool $use true or false
-     * @return GeoNameSearch|object $this
+     * @return GeoNameSearch $this
      */
-	public function useCache(bool $use){
+	public function useCache(bool $use): self 
+	{
         $this->useCache = $use;
 		return $this;
     }
@@ -151,9 +129,10 @@ class GeoNameSearch {
 	/**
      * Set return language type
      * @param string $lang language code
-     * @return GeoNameSearch|object $this
+     * @return GeoNameSearch $this
      */
-	public function setLang(string $lang){
+	public function setLang(string $lang): self 
+	{
         $this->language = $lang;
 		return $this;
     }
@@ -161,9 +140,10 @@ class GeoNameSearch {
 	/**
      * Set return maximum limit
      * @param int $max max rows
-     * @return GeoNameSearch|object $this
+     * @return GeoNameSearch $this
      */
-	public function setLimit(int $max){
+	public function setLimit(int $max): self 
+	{
 		$this->maxLimit = $max;
 		return $this;
 	}
@@ -171,9 +151,10 @@ class GeoNameSearch {
 	/**
      * Set south bounding
      * @param mixed $south point
-     * @return GeoNameSearch|object $this
+     * @return GeoNameSearch $this
      */
-	public function setSouth($south){
+	public function setSouth($south): self 
+	{
 		$this->south = $south;
 		return $this;
 	}
@@ -181,9 +162,10 @@ class GeoNameSearch {
 	/**
      * Set north bounding
      * @param mixed $north point
-     * @return GeoNameSearch|object $this
+     * @return GeoNameSearch $this
      */
-	public function setNorth($north){
+	public function setNorth($north): self 
+	{
 		$this->north = $north;
 		return $this;
 	}
@@ -191,9 +173,10 @@ class GeoNameSearch {
 	/**
      * Set west bounding
      * @param mixed $west point
-     * @return GeoNameSearch|object $this
+     * @return GeoNameSearch $this
      */
-	public function setWest($west){
+	public function setWest($west): self 
+	{
 		$this->west = $west;
 		return $this;
 	}
@@ -201,9 +184,10 @@ class GeoNameSearch {
 	/**
      * Set east bounding
      * @param mixed $east point
-     * @return GeoNameSearch|object $this
+     * @return GeoNameSearch $this
      */
-	public function setEast($east){
+	public function setEast($east): self 
+	{
 		$this->east = $east;
 		return $this;
 	}
@@ -211,9 +195,10 @@ class GeoNameSearch {
 	/**
      * Set return type
      * @param string $type
-     * @return GeoNameSearch|object $this
+     * @return GeoNameSearch $this
      */
-    public function setType(string $type){
+    public function setType(string $type): self 
+	{
         $this->type = $type;
 		return $this;
     }
@@ -221,9 +206,10 @@ class GeoNameSearch {
 	/**
      * Set return style
      * @param string $style
-     * @return GeoNameSearch|object $this
+     * @return GeoNameSearch $this
      */
-    public function setStyle(string $style){
+    public function setStyle(string $style): self 
+	{
         $this->style = $style;
 		return $this;
     }
@@ -231,72 +217,55 @@ class GeoNameSearch {
 	/**
      * Set the local path to store response data
      * @param string $path location ending with /
-     * @return GeoNameSearch|object $this
+     * @return GeoNameSearch $this
      */
-    public function setFilepath($path){
+    public function setFilepath(string $path): self 
+	{
         $this->filepath = $path;
 		return $this;
     }
 
 	/**
      * Set countries array or use our default \Peterujah\NanoBlock\Country
-     * @param object|array $objOrArr class instance or array
-     * @return GeoNameSearch|object $this
+     * @param object|Country|array $countries class instance or array
+	 * new Country(null, Country::BASIC);
+     * @return GeoNameSearch $this
      */
-	public function setCountries($objOrArr){
-        if(empty($objOrArr) && class_exists('\Peterujah\NanoBlock\Country')){
-            $this->countryList = new Country(null, Country::BASIC);
-        }else{
-            $this->countryList = $objOrArr;
-        }
+	public function setCountries(mixed $countries): self 
+	{
+		$this->countryList = $countries;
 		return $this;
     }
 
 	/**
      * Set to allow prepend of additional array in list with all states
      * @param bool $add true or false
-     * @return GeoNameSearch|object $this
+     * @return GeoNameSearch $this
      */
-    public function allowAllStates(bool $add){
+    public function allowAllStates(bool $add): self 
+	{
         $this->includeAllStates = $add;
 		return $this;
     }
 
 	/**
      * Set remove state in state name before searching
-     * @param bool $strip true or false
-     * @return GeoNameSearch|object $this
+     * @param bool $add true or false
+     * @return GeoNameSearch $this
      */
-    public function stripWordState(bool $strip){
+    public function stripWordState(bool $strip): self 
+	{
         $this->stripState = $strip;
 		return $this;
     }
-
-	/**
-     * Set remove city in city name before searching
-     * @param bool $strip true or false
-     * @return GeoNameSearch|object $this
-     */
-	public function stripWordCity(bool $strip){
-        $this->stripCity = $strip;
-		return $this;
-    }
-
-    /**
-     * Set to remove country name from state and city
-     * @param bool $ignore true or false
-     * @return GeoNameSearch|object $this
-     */
-    public function removeCountry(bool $ignore){
-        $this->ignoreCountry = $ignore;
-		return $this;
-    }
-
+    
+    
 	/**
      * Gets the full file path and file name
      * @return string directory filepath / filename
      */
-    public function getFullPath(){
+    public function getFullPath(): string 
+	{
         return $this->filepath . (!empty($this->get("name")) ? strtoupper($this->get("name")) . "/{$this->prefix}/" : "ALL/{$this->prefix}/") . md5($this->query) . ".json";
     }
 
@@ -304,7 +273,8 @@ class GeoNameSearch {
      * Gets the file path
      * @return string directory filepath
      */
-    public function getFilepath(){
+    public function getFilepath(): string 
+	{
         return $this->filepath . (!empty($this->get("name")) ? strtoupper($this->get("name")) . "/{$this->prefix}/" : "ALL/{$this->prefix}/");
     }
 
@@ -312,16 +282,19 @@ class GeoNameSearch {
      * Gets the file name
      * @return string directory filename
      */
-    public function getFilename(){
+    public function getFilename(): string 
+	{
         return md5($this->query) . ".json";
     }
 
 	/**
      * Gets all states array row
+	 * 
      * @return array all states array
      */
-	private function allArray(){
-        return array(
+	private function allArray(): array 
+	{
+        return [
             "lng" => null,
             "geonameId" => 683735635,
             "countryCode" => null,
@@ -330,70 +303,63 @@ class GeoNameSearch {
             "lat" => null,
             "fcl" => null,
             "fcode" => null
-        );
+		];
     }
 
 	/**
      * Gets country detail by key
+	 * 
 	 * @param string $key array key index
-     * @return array all states array
+	 * 
+     * @return string all states array
      */
-	private function get($key){
+	private function get(string $key): string
+	{
 		if(is_array($this->countryList)){
 			$list = $this->countryList;
 		}else{
 			$list = $this->countryList->getPath($this->baseCountry, "list");
 		}
-		return $list[$key] ?? null;
-	}
-
-	/**
-     * Strip city & state from query before searching
-     * @param string $query query
-     * @return string search query stripped
-     */
-    private function stripQuery(string $query){
-		$lowerQuery = strtolower($query);
-		if ($this->stripState && preg_match("~\bstate\b~", $lowerQuery) ){
-			$lowerQuery = str_replace("state", "", $lowerQuery);
-		}
-		if ($this->stripCity && preg_match("~\bcity\b~", $lowerQuery) ){
-			$lowerQuery = str_replace("city", "", $lowerQuery);
-		}
-		return trim($lowerQuery);
+		return $list[$key] ?? '';
 	}
 
 	/**
      * Query and return all states in a given country
+	 * 
 	 * @param string $country country name or country code
-     * @return object|array list states
+	 * 
+     * @return array list states
      */
-	public function states($country){
+	public function states(string $country): array 
+	{
 		$this->baseCountry = $country;
-		$this->removeCountry(true);
 		return $this->search($country, "", "states");
 	}
 
 	/**
      * Query and return all cities in a given state
+	 * 
 	 * @param string $state state name
 	 * @param string $country states in country
-     * @return object|array list cities
+	 * 
+     * @return array list cities
      */
-	public function cities($state, $country){
+	public function cities(string $state, string $country): array 
+	{
+		$state = trim($this->stripState ? str_replace("state", "", strtolower($state)) : $state);
 		$this->baseCountry = $country;
-		$this->removeCountry(true);
-		$this->allowAllStates(false);
 		return $this->search($state, "", "cities");
 	}
 
 	/**
      * Query and return cities, states in a given country or cities in a query state
-	 * @param string $query query city, states, place country
+	 * 
 	 * @param string $country country
-     * @return object|array list states
+	 * 
+     * @return array list states
      */
-	public function query($query, $country){
+	public function query(string $country): array 
+	{
 		$this->baseCountry = $country;
 		return $this->search($country, "", "query");
 	}
@@ -403,10 +369,11 @@ class GeoNameSearch {
 	 * @param string $query query city, states, place country
 	 * @param string $country country
 	 * @param string $prefix
-     * @return object|array list states
+	 * 
+     * @return array list states
      */
-    public function search($query, $country, $prefix){
-		$query = $this->stripQuery($query);
+    public function search(string $query, string $country, string $prefix): array 
+	{
         $this->country = urlencode(htmlentities($country));
         $this->query = urlencode(htmlentities($query));
 		$this->prefix = $prefix;
@@ -445,18 +412,12 @@ class GeoNameSearch {
 			$param["east"] = $this->east;
 		}
 
-		if($this->useCache && class_exists('\Peterujah\NanoBlock\Cache')){
-			$res = (new Cache($this->query, $this->getFilepath()))->widthExpired("ALL", function () use($param) {
-				return $this->fetch($this->endpoint . http_build_query($param), $param);
-			}, 60*1000, true);
+		if(@file_exists($this->getFullPath())){
+			$res = json_decode(@file_get_contents($this->getFullPath()), true);
 		}else{
-			if(@file_exists($this->getFullPath())){
-				$res = json_decode(@file_get_contents($this->getFullPath()));
-			}else{
-				$res = $this->fetch($this->endpoint . http_build_query($param), $param);
-				if($res["status"] == 200){
-					$res = $this->store($res);
-				}
+			$res = $this->fetch($this->endpoint . http_build_query($param), $param);
+			if($res["status"] == 200 && $this->useCache){
+				$this->store($res);
 			}
 		}
 
@@ -464,88 +425,92 @@ class GeoNameSearch {
 			$res["data"]["geonames"][] = $this->allArray();
 			sort($res["data"]["geonames"]);
 		}
-
-		if($this->ignoreCountry){
-			foreach($res["data"]["geonames"] as $key => $geo){
-				$countryName = strtolower($geo["name"]);
-				if($countryName == strtolower($this->country) OR $countryName == strtolower($this->baseCountry)){
-					unset($res["data"]["geonames"][$key]);
-					break;
-				}
-			}
-		}
 		return $res;
     }
 
 	/**
      * Fetch free data from geoname server
+	 * 
 	 * @param string $link request url and parameters
 	 * @param array $param request array parameters
-     * @return object|array list api response
+	 * 
+     * @return array list api response
      */
-    public function fetch($link, $param){
-		if(class_exists('\GuzzleHttp\Client')){
-			$client = new Client();
-			$req = $client->request('GET', $link, $param);
-			$payload = $req->getBody();
+    public function fetch(string $link, array $param): array 
+	{
+		try{
 			$error = null;
-		}else{
-			$curl = curl_init();
-			curl_setopt($curl, CURLOPT_URL, $link);
-			curl_setopt($curl, CURLOPT_FRESH_CONNECT, true);
-			curl_setopt($curl, CURLOPT_POST,1);
-			curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'GET');
-			curl_setopt($curl, CURLOPT_POSTFIELDS, $param);
-			curl_setopt($curl, CURLOPT_RETURNTRANSFER,1);
-			curl_setopt($curl, CURLOPT_MAXREDIRS, 10);
-			curl_setopt($curl, CURLOPT_TIMEOUT, 120);
-			curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-			curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-			curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-			curl_setopt($curl, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.0.3705; .NET CLR 1.1.4322)');
-			$payload = curl_exec($curl);
-			$error = curl_error($curl);
-			curl_close ($curl);
-		}
+			if(class_exists('\GuzzleHttp\Client')){
+				$client = new \GuzzleHttp\Client();
+				$response = $client->request('GET', $link, $param);
+				$payload = $response->getBody()->getContents();
+			}else{
+				$curl = curl_init();
+				curl_setopt($curl, CURLOPT_URL, $link);
+				curl_setopt($curl, CURLOPT_FRESH_CONNECT, true);
+				curl_setopt($curl, CURLOPT_POST,1);
+				curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'GET');
+				curl_setopt($curl, CURLOPT_POSTFIELDS, $param);
+				curl_setopt($curl, CURLOPT_RETURNTRANSFER,1);
+				curl_setopt($curl, CURLOPT_MAXREDIRS, 10);
+				curl_setopt($curl, CURLOPT_TIMEOUT, 120);
+				curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+				curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+				curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+				curl_setopt($curl, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.0.3705; .NET CLR 1.1.4322)');
+				$payload = curl_exec($curl);
+				$error = curl_error($curl);
+				curl_close ($curl);
+			}
 
-        if(!empty($error)){
-			$res = array(
-				'status' => 202, 
-				'statusText' => 'request_error',
-				'message' => $error, 
-			);
-		}else{
+			if($error !== null){
+				return [
+					'status' => 202, 
+					'statusText' => 'request_error',
+					'message' => $error, 
+				];
+			}
+
 			$data = json_decode($payload, true);
-			if(empty($data["geonames"]) or (int) $data["totalResultsCount"] < 1){
-				$res = array(
+			if (empty($data["geonames"]) || (int) $data["totalResultsCount"] < 1) {
+				return [
 					'status' => 201, 
 					'statusText' => 'data_empty',
 					'url' => $link,
 					'data' => $data,
-					'message' => 'empty res data.', 
-					'error' => (!empty($error) ? $error : null), 
-				);
-			}else{
-				$res = array(
-					'status' => 200, 
-					'statusText' => 'has_data',
-					'data' => array_merge(array(
-						'ISO' => $this->get("short_name"), 
-						'prefix' => $this->get("prefix") ?? $this->get("code"), 
-						'country' => $this->get("name") ?? null
-					), $data)
-				);
+					'message' => 'Empty response data.', 
+					'error' => null,
+				];
 			}
-        }
-        return $res;
+
+			return [
+				'status' => 200, 
+				'statusText' => 'has_data',
+				'data' => array_merge([
+					'ISO' => $this->get("short_name"), 
+					'prefix' => $this->get("prefix") ?? $this->get("code"), 
+					'country' => $this->get("name") ?? null
+				], $data)
+			];
+		} catch (Exception $e) {
+			return [
+				'status' => 202, 
+				'statusText' => 'request_error',
+				'message' => $e->getMessage(), 
+				'error' => $e,
+			];
+		}
     }
 
 	/**
      * Store api response data for later use
+	 * 
 	 * @param array $data json
-     * @return json api response
+	 * 
+     * @return void 
      */
-	private function store($data){
+	private function store($data): void 
+	{
 		if(!@is_dir($this->getFilepath())){
 			@mkdir($this->getFilepath(), 0777, true);
 			@chmod($this->getFilepath(), 0755); 
@@ -558,6 +523,5 @@ class GeoNameSearch {
 		$fp = @fopen($this->getFullPath(), 'w');
 		@fwrite($fp, json_encode($data));
 		@fclose($fp);
-		return $data;
 	}
 }
