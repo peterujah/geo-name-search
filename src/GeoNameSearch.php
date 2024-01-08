@@ -7,6 +7,7 @@
  */
 namespace Peterujah\NanoBlock;
 use \Exception;
+use \Peterujah\NanoBlock\Country;
 /**
  * Class GeoNameSearch.
  */
@@ -99,13 +100,26 @@ class GeoNameSearch {
 	/**
 	 * Hold the base country 
 	 */
-	private $baseCountry;
+	private string $baseCountry;
 
 	/**
 	 * Hold the directory cache base prefix 
-	 */
-	private $prefix;
+	*/
+	private string $prefix;
+	
+	/**
+	 * Hold country
+	*/
+	private string $country = '';
 
+	/**
+	 * Hold query
+	*/
+	private string $query = '';
+
+	/**
+	 * Hold stripe state
+	*/
 	private bool $stripState = true;
 
     public function __construct(string $username, string $baseCountry = 'Nigeria'){
@@ -267,7 +281,7 @@ class GeoNameSearch {
     public function getFullPath(): string
 	{
 		$name = $this->get("name");
-        return $this->filepath . (!empty($name) ? strtoupper($name) . "/{$this->prefix}/" : "ALL/{$this->prefix}/") . md5($this->query) . ".json";
+        return $this->filepath . (!empty($name) ? strtoupper($name) : "ALL") . "/{$this->prefix}/" . md5($this->query) . ".json";
     }
 
 	/**
@@ -278,7 +292,7 @@ class GeoNameSearch {
     public function getFilepath(): string 
 	{
 		$name = $this->get("name");
-        return $this->filepath . (!empty($name) ? strtoupper($name) . "/{$this->prefix}/" : "ALL/{$this->prefix}/");
+        return $this->filepath . (!empty($name) ? strtoupper($name) : "ALL") . "/{$this->prefix}/";
     }
 
 	/**
@@ -318,11 +332,13 @@ class GeoNameSearch {
      */
 	private function get(string $key): string
 	{
+		$list = [];
 		if(is_array($this->countryList)){
 			$list = $this->countryList;
-		}else{
+		}else if($this->countryList instanceof Country){
 			$list = $this->countryList->getPath($this->baseCountry, "list");
 		}
+
 		return $list[$key] ?? '';
 	}
 
