@@ -258,24 +258,27 @@ class GeoNameSearch {
         $this->stripState = $strip;
 		return $this;
     }
-    
-    
+
 	/**
      * Gets the full file path and file name
+	 * 
      * @return string directory filepath / filename
-     */
-    public function getFullPath(): string 
+    */
+    public function getFullPath(): string
 	{
-        return $this->filepath . (!empty($this->get("name")) ? strtoupper($this->get("name")) . "/{$this->prefix}/" : "ALL/{$this->prefix}/") . md5($this->query) . ".json";
+		$name = $this->get("name");
+        return $this->filepath . (!empty($name) ? strtoupper($name) . "/{$this->prefix}/" : "ALL/{$this->prefix}/") . md5($this->query) . ".json";
     }
 
 	/**
      * Gets the file path
+	 * 
      * @return string directory filepath
-     */
+    */
     public function getFilepath(): string 
 	{
-        return $this->filepath . (!empty($this->get("name")) ? strtoupper($this->get("name")) . "/{$this->prefix}/" : "ALL/{$this->prefix}/");
+		$name = $this->get("name");
+        return $this->filepath . (!empty($name) ? strtoupper($name) . "/{$this->prefix}/" : "ALL/{$this->prefix}/");
     }
 
 	/**
@@ -377,12 +380,12 @@ class GeoNameSearch {
         $this->country = urlencode(htmlentities($country));
         $this->query = urlencode(htmlentities($query));
 		$this->prefix = $prefix;
-        $param  = array(
+        $param  = [
             'type' => $this->type, 
             'style' => $this->style,
             'username' => $this->username,
 			"lang" => $this->language
-        );
+		];
 
 		if(!empty($this->query)){
 			$param["q"] = $this->query;
